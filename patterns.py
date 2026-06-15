@@ -86,33 +86,39 @@ def default_presets() -> list[Pattern]:
     directly (the UI no longer adds/removes templates).
     """
     return [
-        Pattern(name="慢热 Slow Build", loop=0, steps=[
-            Step(0.15, 8000), Step(0.25, 8000), Step(0.35, 10000),
-            Step(0.45, 10000), Step(0.55, 12000), Step(0.65, 12000),
-            Step(0.78, 15000), Step(0.88, 15000),
+        Pattern(name="暖身 Warm-Up", loop=0, steps=[
+            Step(0.12, 8000), Step(0.20, 10000), Step(0.30, 12000),
+            Step(0.42, 14000), Step(0.55, 16000),
+        ]),
+        Pattern(name="挑逗 Tease", loop=7, steps=[
+            Step(0.60, 800), Step(0.0, 1200), Step(0.75, 600), Step(0.0, 1500),
+            Step(0.50, 1000), Step(0.0, 2000), Step(0.85, 700), Step(0.0, 1300),
         ]),
         Pattern(name="海浪 Waves", loop=5, steps=[
             Step(0.30, 2000), Step(0.50, 2000), Step(0.70, 2000),
             Step(0.92, 2500), Step(0.70, 2000), Step(0.50, 2000),
         ]),
-        Pattern(name="脉冲律动 Pulse Groove", loop=34, steps=[
-            Step(0.85, 300), Step(0.10, 200), Step(0.85, 300),
-            Step(0.10, 200), Step(0.65, 500), Step(0.10, 300),
+        Pattern(name="心跳 Racing Heart", loop=70, steps=[
+            Step(0.95, 140), Step(0.30, 100), Step(0.95, 140), Step(0.30, 450),
         ]),
-        Pattern(name="心跳 Heartbeat", loop=59, steps=[
-            Step(0.90, 150), Step(0.20, 120), Step(0.90, 150), Step(0.20, 600),
+        Pattern(name="边缘 Edge", loop=2, steps=[
+            Step(0.40, 5000), Step(0.60, 6000), Step(0.80, 7000),
+            Step(0.95, 9000), Step(0.10, 5000),
         ]),
-        Pattern(name="欲擒故纵 Edging", loop=3, steps=[
-            Step(0.40, 5000), Step(0.60, 5000), Step(0.80, 6000),
-            Step(0.97, 6000), Step(0.20, 4000),
+        Pattern(name="榨取 Milking", loop=6, steps=[
+            Step(0.70, 3000), Step(0.90, 2000), Step(0.70, 3000), Step(1.00, 2500),
         ]),
-        Pattern(name="颤栗 Tease & Spike", loop=4, steps=[
-            Step(0.30, 4000), Step(0.10, 1500), Step(1.00, 1200),
-            Step(0.15, 2500), Step(0.45, 4000), Step(0.10, 1500), Step(1.00, 1800),
+        Pattern(name="失控 Overload", loop=2, steps=[
+            Step(1.00, 6000), Step(0.60, 1500), Step(1.00, 6000),
+            Step(0.70, 1500), Step(1.00, 8000),
         ]),
-        Pattern(name="高潮冲刺 Climax", loop=0, steps=[
+        Pattern(name="高潮 Climax", loop=0, steps=[
             Step(0.50, 5000), Step(0.65, 6000), Step(0.80, 8000),
-            Step(0.90, 10000), Step(1.00, 25000), Step(1.00, 25000),
+            Step(0.90, 10000), Step(1.00, 25000), Step(1.00, 20000),
+        ]),
+        Pattern(name="余韵 Afterglow", loop=0, steps=[
+            Step(0.50, 8000), Step(0.35, 10000), Step(0.25, 12000),
+            Step(0.15, 12000), Step(0.08, 10000),
         ]),
     ]
 

@@ -1,18 +1,29 @@
 {
   "patterns": [
     {
-      "name": "慢热 Slow Build",
+      "name": "暖身 Warm-Up",
       "steps": [
-        {"intensity": 0.15, "duration_ms": 8000},
-        {"intensity": 0.25, "duration_ms": 8000},
-        {"intensity": 0.35, "duration_ms": 10000},
-        {"intensity": 0.45, "duration_ms": 10000},
-        {"intensity": 0.55, "duration_ms": 12000},
-        {"intensity": 0.65, "duration_ms": 12000},
-        {"intensity": 0.78, "duration_ms": 15000},
-        {"intensity": 0.88, "duration_ms": 15000}
+        {"intensity": 0.12, "duration_ms": 8000},
+        {"intensity": 0.20, "duration_ms": 10000},
+        {"intensity": 0.30, "duration_ms": 12000},
+        {"intensity": 0.42, "duration_ms": 14000},
+        {"intensity": 0.55, "duration_ms": 16000}
       ],
       "loop": 0
+    },
+    {
+      "name": "挑逗 Tease",
+      "steps": [
+        {"intensity": 0.60, "duration_ms": 800},
+        {"intensity": 0.00, "duration_ms": 1200},
+        {"intensity": 0.75, "duration_ms": 600},
+        {"intensity": 0.00, "duration_ms": 1500},
+        {"intensity": 0.50, "duration_ms": 1000},
+        {"intensity": 0.00, "duration_ms": 2000},
+        {"intensity": 0.85, "duration_ms": 700},
+        {"intensity": 0.00, "duration_ms": 1300}
+      ],
+      "loop": 7
     },
     {
       "name": "海浪 Waves",
@@ -27,60 +38,67 @@
       "loop": 5
     },
     {
-      "name": "脉冲律动 Pulse Groove",
+      "name": "心跳 Racing Heart",
       "steps": [
-        {"intensity": 0.85, "duration_ms": 300},
-        {"intensity": 0.10, "duration_ms": 200},
-        {"intensity": 0.85, "duration_ms": 300},
-        {"intensity": 0.10, "duration_ms": 200},
-        {"intensity": 0.65, "duration_ms": 500},
-        {"intensity": 0.10, "duration_ms": 300}
+        {"intensity": 0.95, "duration_ms": 140},
+        {"intensity": 0.30, "duration_ms": 100},
+        {"intensity": 0.95, "duration_ms": 140},
+        {"intensity": 0.30, "duration_ms": 450}
       ],
-      "loop": 34
+      "loop": 70
     },
     {
-      "name": "心跳 Heartbeat",
-      "steps": [
-        {"intensity": 0.90, "duration_ms": 150},
-        {"intensity": 0.20, "duration_ms": 120},
-        {"intensity": 0.90, "duration_ms": 150},
-        {"intensity": 0.20, "duration_ms": 600}
-      ],
-      "loop": 59
-    },
-    {
-      "name": "欲擒故纵 Edging",
+      "name": "边缘 Edge",
       "steps": [
         {"intensity": 0.40, "duration_ms": 5000},
-        {"intensity": 0.60, "duration_ms": 5000},
-        {"intensity": 0.80, "duration_ms": 6000},
-        {"intensity": 0.97, "duration_ms": 6000},
-        {"intensity": 0.20, "duration_ms": 4000}
+        {"intensity": 0.60, "duration_ms": 6000},
+        {"intensity": 0.80, "duration_ms": 7000},
+        {"intensity": 0.95, "duration_ms": 9000},
+        {"intensity": 0.10, "duration_ms": 5000}
       ],
-      "loop": 3
+      "loop": 2
     },
     {
-      "name": "颤栗 Tease & Spike",
+      "name": "榨取 Milking",
       "steps": [
-        {"intensity": 0.30, "duration_ms": 4000},
-        {"intensity": 0.10, "duration_ms": 1500},
-        {"intensity": 1.00, "duration_ms": 1200},
-        {"intensity": 0.15, "duration_ms": 2500},
-        {"intensity": 0.45, "duration_ms": 4000},
-        {"intensity": 0.10, "duration_ms": 1500},
-        {"intensity": 1.00, "duration_ms": 1800}
+        {"intensity": 0.70, "duration_ms": 3000},
+        {"intensity": 0.90, "duration_ms": 2000},
+        {"intensity": 0.70, "duration_ms": 3000},
+        {"intensity": 1.00, "duration_ms": 2500}
       ],
-      "loop": 4
+      "loop": 6
     },
     {
-      "name": "高潮冲刺 Climax",
+      "name": "失控 Overload",
+      "steps": [
+        {"intensity": 1.00, "duration_ms": 6000},
+        {"intensity": 0.60, "duration_ms": 1500},
+        {"intensity": 1.00, "duration_ms": 6000},
+        {"intensity": 0.70, "duration_ms": 1500},
+        {"intensity": 1.00, "duration_ms": 8000}
+      ],
+      "loop": 2
+    },
+    {
+      "name": "高潮 Climax",
       "steps": [
         {"intensity": 0.50, "duration_ms": 5000},
         {"intensity": 0.65, "duration_ms": 6000},
         {"intensity": 0.80, "duration_ms": 8000},
         {"intensity": 0.90, "duration_ms": 10000},
         {"intensity": 1.00, "duration_ms": 25000},
-        {"intensity": 1.00, "duration_ms": 25000}
+        {"intensity": 1.00, "duration_ms": 20000}
+      ],
+      "loop": 0
+    },
+    {
+      "name": "余韵 Afterglow",
+      "steps": [
+        {"intensity": 0.50, "duration_ms": 8000},
+        {"intensity": 0.35, "duration_ms": 10000},
+        {"intensity": 0.25, "duration_ms": 12000},
+        {"intensity": 0.15, "duration_ms": 12000},
+        {"intensity": 0.08, "duration_ms": 10000}
       ],
       "loop": 0
     }

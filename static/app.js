@@ -8,7 +8,8 @@ const $ = (id) => document.getElementById(id);
 const LS_CHATS = "buttplugllm.chats";
 const LS_ACTIVE = "buttplugllm.active";
 
-const PRESET_KEYS = ["blank", "companion", "playful", "dom"];
+const PRESET_KEYS = ["blank", "senpai", "lover", "yandere", "mistress", "kitten"];
+const DEFAULT_PRESET = "senpai";
 function presetObj(key) {
   return { key, title: t(`preset.${key}.t`), desc: t(`preset.${key}.d`), prompt: t(`preset.${key}.p`) };
 }
@@ -19,14 +20,14 @@ let ws = null;
 let devices = [];
 let intensityTimer = null;
 let editingExisting = false;
-let selectedPreset = "companion";
+let selectedPreset = DEFAULT_PRESET;
 
 /* ---------- persistence ---------- */
 function load() {
   try { state.chats = JSON.parse(localStorage.getItem(LS_CHATS)) || []; } catch { state.chats = []; }
   state.active = localStorage.getItem(LS_ACTIVE);
   if (!state.chats.length) {
-    const c = newChatObj(t("chat.defaultTitle"), t("preset.companion.p"), t("preset.companion.t"));
+    const c = newChatObj(t("chat.defaultTitle"), t(`preset.${DEFAULT_PRESET}.p`), t(`preset.${DEFAULT_PRESET}.t`));
     state.chats.push(c); state.active = c.id;
   }
   if (!state.chats.find((c) => c.id === state.active)) state.active = state.chats[0].id;
@@ -256,8 +257,8 @@ function openChatModal(edit) {
   $("modalTitle").textContent = edit ? t("modal.editPersona") : t("modal.newChat");
   const c = edit ? activeChat() : null;
   $("mTitle").value = c ? c.title : "";
-  $("mPrompt").value = c ? c.systemPrompt : t("preset.companion.p");
-  selectedPreset = edit ? "blank" : "companion";
+  $("mPrompt").value = c ? c.systemPrompt : t(`preset.${DEFAULT_PRESET}.p`);
+  selectedPreset = edit ? "blank" : DEFAULT_PRESET;
   renderPresets();
   $("chatModal").classList.add("show");
 }
