@@ -160,7 +160,17 @@ class TemplateStore:
         return list(self._patterns.values())
 
     def get(self, name: str) -> Pattern | None:
-        return self._patterns.get(name)
+        # exact match first, then case-insensitive substring (so a bilingual
+        # template like "海浪 Waves" resolves from "Waves" or "海浪")
+        if name in self._patterns:
+            return self._patterns[name]
+        q = (name or "").strip().lower()
+        if not q:
+            return None
+        for key, pat in self._patterns.items():
+            if q in key.lower():
+                return pat
+        return None
 
     def add(self, pattern: Pattern) -> None:
         self._patterns[pattern.name] = pattern

@@ -17,6 +17,27 @@
   --shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
+/* Light theme: overrides the variables when body[data-theme="light"]. */
+body[data-theme="light"] {
+  --bg: #f4f5fa;
+  --bg-2: #ffffff;
+  --bg-3: #eef0f6;
+  --panel: #ffffff;
+  --border: #dde0ea;
+  --text: #1b1c26;
+  --muted: #6b6f80;
+  --accent: #8b2fd6;
+  --accent-2: #6c3cff;
+  --accent-soft: rgba(139, 47, 214, 0.12);
+  --danger: #e11d48;
+  --danger-2: #be123c;
+  --ok: #0ea371;
+  --shadow: 0 8px 30px rgba(60, 60, 90, 0.18);
+  background: radial-gradient(1200px 800px at 80% -10%, #efe6ff 0%, var(--bg) 55%);
+}
+body[data-theme="light"] ::-webkit-scrollbar-thumb { background: #c7cbd8; }
+body[data-theme="light"] .msg.assistant { background: #ffffff; }
+
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
@@ -59,8 +80,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .brand .dot { color: var(--accent); margin: 0 1px; }
 .spacer { flex: 1; }
 
-.sidebar-foot { padding: 10px 12px; border-top: 1px solid var(--border); }
-.sidebar-foot select { width: 100%; }
+.sidebar-foot { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.sidebar-foot select { flex: 1; }
+.sidebar-foot #themeBtn { flex-shrink: 0; }
 
 /* ---- buttons ---- */
 .btn {
@@ -174,12 +196,31 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
 /* ---- modal ---- */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 50; }
 .modal-backdrop.show { display: flex; }
-.modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px; width: 460px; max-width: 92vw; padding: 22px; box-shadow: var(--shadow); }
+.modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px; width: 460px; max-width: 92vw; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: var(--shadow); }
+
+.bld-group { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.bld-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+#builderFields > div:not(.bld-group):not(.bld-grid) { margin-bottom: 8px; }
+#builderFields label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+#builderFields input, #builderFields textarea {
+  width: 100%; background: var(--bg-3); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; font-size: 13px;
+}
+#builderFields textarea { min-height: 60px; resize: vertical; font-family: inherit; }
+#builderFields input:focus, #builderFields textarea:focus { outline: none; border-color: var(--accent); }
+.modal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.modal-head h2 { margin: 0; font-size: 18px; }
+.modal-close {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-3); color: var(--text);
+  font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { border-color: var(--danger); color: var(--danger); }
 .modal h2 { margin: 0 0 16px; font-size: 18px; }
 .modal .field textarea { width: 100%; min-height: 110px; resize: vertical; background: var(--bg-3); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 13px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.preset { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-3); font-size: 13px; text-align: left; }
+.preset { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-3); color: var(--text); font-size: 13px; text-align: left; }
 .preset.active { border-color: var(--accent); background: var(--accent-soft); }
 .preset .pt { font-weight: 600; }
 .preset .pd { font-size: 11px; color: var(--muted); }

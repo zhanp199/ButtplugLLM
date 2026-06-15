@@ -8,7 +8,9 @@ const $ = (id) => document.getElementById(id);
 const LS_CHATS = "buttplugllm.chats";
 const LS_ACTIVE = "buttplugllm.active";
 
-const PRESET_KEYS = ["blank", "senpai", "lover", "yandere", "mistress", "kitten"];
+const PRESET_KEYS = ["blank", "builder",
+  "senpai", "lover", "yandere", "mistress", "kitten",
+  "ceo", "puppy", "aloof", "yanboy", "knight"];
 const DEFAULT_PRESET = "senpai";
 function presetObj(key) {
   return { key, title: t(`preset.${key}.t`), desc: t(`preset.${key}.d`), prompt: t(`preset.${key}.p`) };
@@ -260,6 +262,7 @@ function openChatModal(edit) {
   $("mPrompt").value = c ? c.systemPrompt : t(`preset.${DEFAULT_PRESET}.p`);
   selectedPreset = edit ? "blank" : DEFAULT_PRESET;
   renderPresets();
+  updateBuilderVisibility();
   $("chatModal").classList.add("show");
 }
 function renderPresets() {
@@ -268,14 +271,69 @@ function renderPresets() {
     const b = document.createElement("button");
     b.className = "preset" + (p.key === selectedPreset ? " active" : "");
     b.innerHTML = `<div class="pt">${escapeHtml(p.title)}</div><div class="pd">${escapeHtml(p.desc)}</div>`;
-    b.onclick = () => { selectedPreset = p.key; $("mPrompt").value = p.prompt; renderPresets(); };
+    b.onclick = () => {
+      selectedPreset = p.key;
+      if (p.key === "blank") $("mPrompt").value = "";
+      else if (p.key !== "builder") $("mPrompt").value = p.prompt;
+      updateBuilderVisibility();
+      renderPresets();
+    };
     el.appendChild(b);
   });
 }
+function updateBuilderVisibility() {
+  $("builderFields").style.display = selectedPreset === "builder" ? "block" : "none";
+}
+function fval(id) { const e = $(id); return e ? e.value.trim() : ""; }
+function buildPromptFromFields() {
+  const en = typeof getLang === "function" && getLang() === "en";
+  const aiName = fval("f_aiName"), myName = fval("f_myName"), persona = fval("f_aiPersona");
+  const rel = fval("f_rel"), scene = fval("f_scene"), role = fval("f_role"), toy = fval("f_toy");
+  const pace = fval("f_pace"), limits = fval("f_limits");
+  const ageSuffix = en ? " y/o" : "岁";
+  const joiner = en ? ", " : "、";
+  const myParts = [fval("f_myGender"), fval("f_myAge") && fval("f_myAge") + ageSuffix, fval("f_myJob")].filter(Boolean).join(joiner);
+  const aiParts = [fval("f_aiGender"), fval("f_aiAge") && fval("f_aiAge") + ageSuffix, fval("f_aiJob")].filter(Boolean).join(joiner);
+  const L = [];
+  if (en) {
+    L.push(`You will play "${aiName || "them"}" in a first-person, fully immersive adult roleplay with me.`);
+    L.push("\n[Characters]");
+    L.push(`- Me: ${myName || "me"}${myParts ? " (" + myParts + ")" : ""}.`);
+    L.push(`- You: ${aiName || "you"}${aiParts ? " (" + aiParts + ")" : ""}${persona ? ", personality/tone: " + persona : ""}.`);
+    if (rel) L.push(`- Our relationship: ${rel}.`);
+    if (scene) L.push(`\n[Scene] ${scene}`);
+    if (role) L.push(`\n[Character notes] ${role}`);
+    L.push(toy
+      ? `\n[Device] On/in me: ${toy}. You can control it live via commands to drive the scene.`
+      : `\n[Device] You can control the toy on me live via commands to drive the scene.`);
+    if (pace) L.push(`[Pacing] ${pace}.`);
+    if (limits) L.push(`[Avoid] ${limits}.`);
+    return L.join("\n") + (typeof CMD_BLOCK_EN !== "undefined" ? CMD_BLOCK_EN : "");
+  }
+  L.push(`你将扮演【${aiName || "对方"}】,与我进行第一人称、沉浸式的成人角色扮演。`);
+  L.push("\n【人物】");
+  L.push(`- 我:${myName || "我"}${myParts ? "(" + myParts + ")" : ""}。`);
+  L.push(`- 你:${aiName || "你"}${aiParts ? "(" + aiParts + ")" : ""}${persona ? ",性格/语气:" + persona : ""}。`);
+  if (rel) L.push(`- 我们的关系:${rel}。`);
+  if (scene) L.push(`\n【场景】${scene}`);
+  if (role) L.push(`\n【角色设定】${role}`);
+  L.push(toy
+    ? `\n【设备】我身上/体内有:${toy}。你可以通过指令实时控制它,用快感推动剧情。`
+    : `\n【设备】你可以通过指令实时控制我身上的玩具,用快感推动剧情。`);
+  if (pace) L.push(`【节奏偏好】${pace}。`);
+  if (limits) L.push(`【请避免】${limits}。`);
+  return L.join("\n") + (typeof CMD_BLOCK !== "undefined" ? CMD_BLOCK : "");
+}
 function saveChatModal() {
-  const title = $("mTitle").value.trim() || t("chat.defaultTitle");
+  if (selectedPreset === "builder" && !$("mPrompt").value.trim()) {
+    $("mPrompt").value = buildPromptFromFields();
+  }
+  let title = $("mTitle").value.trim();
+  if (!title) title = (selectedPreset === "builder" && (fval("f_aiName") || fval("f_rel"))) || t("chat.defaultTitle");
   const prompt = $("mPrompt").value;
-  const role = presets().find((p) => p.key === selectedPreset)?.title || t("role.custom");
+  const role = selectedPreset === "builder"
+    ? (fval("f_aiName") || fval("f_rel") || t("role.custom"))
+    : (presets().find((p) => p.key === selectedPreset)?.title || t("role.custom"));
   if (editingExisting) {
     const c = activeChat(); c.title = title; c.systemPrompt = prompt; c.role = role;
   } else {
@@ -294,6 +352,11 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
 }
 function autoGrow() { const i = $("input"); i.style.height = "auto"; i.style.height = Math.min(140, i.scrollHeight) + "px"; }
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  localStorage.setItem("buttplugllm.theme", theme);
+  $("themeBtn").textContent = theme === "light" ? "☀️" : "🌙";
+}
 
 /* ---------- wire up ---------- */
 function init() {
@@ -334,7 +397,13 @@ function init() {
   $("playFreqBtn").onclick = playFrequency;
 
   $("mCancel").onclick = () => $("chatModal").classList.remove("show");
+  $("mClose").onclick = () => $("chatModal").classList.remove("show");
   $("mSave").onclick = saveChatModal;
+  $("genPromptBtn").onclick = () => { $("mPrompt").value = buildPromptFromFields(); };
+
+  applyTheme(localStorage.getItem("buttplugllm.theme") || "dark");
+  $("themeBtn").onclick = () =>
+    applyTheme(document.body.dataset.theme === "light" ? "dark" : "light");
 
   setInterval(refreshDevices, 8000);
 }

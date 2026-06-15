@@ -21,6 +21,7 @@
           <option value="zh">中文</option>
           <option value="en">English</option>
         </select>
+        <button class="btn sm" id="themeBtn" title="Theme / 主题">🌙</button>
       </div>
     </aside>
 
@@ -85,13 +86,44 @@
   <!-- New / edit chat modal -->
   <div class="modal-backdrop" id="chatModal">
     <div class="modal">
-      <h2 id="modalTitle">新建会话</h2>
+      <div class="modal-head">
+        <button class="modal-close" id="mClose" aria-label="close" title="关闭">×</button>
+        <h2 id="modalTitle">新建会话</h2>
+      </div>
       <div class="field">
         <label data-i18n="modal.chatTitle">会话标题</label>
         <input type="text" id="mTitle" data-i18n-ph="modal.titlePlaceholder" />
       </div>
       <label style="font-size:12px;color:var(--muted)" data-i18n="modal.choosePersona">选择人设</label>
       <div class="preset-grid" id="presetGrid"></div>
+
+      <div id="builderFields" style="display:none">
+        <div class="bld-group" data-i18n="g.me">我</div>
+        <div class="bld-grid">
+          <div><label data-i18n="f.name">名字</label><input type="text" id="f_myName" /></div>
+          <div><label data-i18n="f.gender">性别</label><input type="text" id="f_myGender" data-i18n-ph="ph.gender" /></div>
+          <div><label data-i18n="f.age">年龄</label><input type="text" id="f_myAge" data-i18n-ph="ph.age" /></div>
+          <div><label data-i18n="f.job">职业</label><input type="text" id="f_myJob" /></div>
+        </div>
+        <div class="bld-group" data-i18n="g.ai">AI</div>
+        <div class="bld-grid">
+          <div><label data-i18n="f.name">名字</label><input type="text" id="f_aiName" /></div>
+          <div><label data-i18n="f.gender">性别</label><input type="text" id="f_aiGender" data-i18n-ph="ph.gender" /></div>
+          <div><label data-i18n="f.age">年龄</label><input type="text" id="f_aiAge" data-i18n-ph="ph.age" /></div>
+          <div><label data-i18n="f.job">职业</label><input type="text" id="f_aiJob" /></div>
+        </div>
+        <div><label data-i18n="f.aiPersona">AI 性格/语气</label><input type="text" id="f_aiPersona" data-i18n-ph="ph.aiPersona" /></div>
+        <div class="bld-group" data-i18n="g.setting">设定</div>
+        <div><label data-i18n="f.relationship">我们的关系</label><input type="text" id="f_rel" data-i18n-ph="ph.relationship" /></div>
+        <div><label data-i18n="f.scene">场景/背景</label><input type="text" id="f_scene" data-i18n-ph="ph.scene" /></div>
+        <div><label data-i18n="f.roleSetting">角色设定</label><textarea id="f_role" data-i18n-ph="ph.roleSetting"></textarea></div>
+        <div><label data-i18n="f.toy">我身上的玩具</label><input type="text" id="f_toy" data-i18n-ph="ph.toy" /></div>
+        <div class="bld-group" data-i18n="g.play">玩法</div>
+        <div><label data-i18n="f.pace">节奏与强度</label><input type="text" id="f_pace" data-i18n-ph="ph.pace" /></div>
+        <div><label data-i18n="f.limits">边界/避免</label><input type="text" id="f_limits" data-i18n-ph="ph.limits" /></div>
+        <button class="btn sm full" id="genPromptBtn" data-i18n="builder.generate" style="margin-top:8px">用以上字段生成 Prompt</button>
+      </div>
+
       <div class="field">
         <label data-i18n="modal.prompt">System / Role Prompt（可自定义）</label>
         <textarea id="mPrompt" data-i18n-ph="modal.promptPlaceholder"></textarea>
