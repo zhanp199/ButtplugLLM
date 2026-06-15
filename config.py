@@ -57,6 +57,13 @@ LLM_TOOL_MODE = os.environ.get("LLM_TOOL_MODE", "prompt").strip().lower()
 #       raise "Cannot call something that is not a function: got UndefinedValue".
 LLM_PROMPT_FORMAT = os.environ.get("LLM_PROMPT_FORMAT", "chat").strip().lower()
 
+# Token streaming (prompt mode only):
+#   "auto" (default) — try streaming; if the endpoint doesn't support it, fall
+#       back to non-streaming for the rest of the session.
+#   "on"  — always stream.   "off" — never stream.
+# When streaming, inline [[commands]] fire the moment they appear mid-reply.
+LLM_STREAMING = os.environ.get("LLM_STREAMING", "auto").strip().lower()
+
 # --- Safety ---
 MAX_INTENSITY = max(0.0, min(1.0, _f("MAX_INTENSITY", 1.0)))
 MAX_DURATION_MS = _i("MAX_DURATION_MS", 30_000)

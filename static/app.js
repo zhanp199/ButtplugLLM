@@ -21,6 +21,8 @@ let state = { chats: [], active: null };
 let ws = null;
 let devices = [];
 let intensityTimer = null;
+let sBubble = null;   // current live streaming bubble
+let sFull = "";       // accumulated visible text for the streaming turn
 let editingExisting = false;
 let selectedPreset = DEFAULT_PRESET;
 
@@ -117,21 +119,40 @@ function connectWs() {
   ws = new WebSocket(`${proto}://${location.host}/ws/chat`);
   ws.onmessage = (ev) => {
     const e = JSON.parse(ev.data);
-    if (e.type === "assistant") {
+    if (e.type === "delta") {
+      if (!sBubble) { hideThinking(); sBubble = addMsgDom("assistant", ""); }
+      sBubble._t = (sBubble._t || "") + e.text;
+      sBubble.textContent = sBubble._t;
+      sFull += e.text;
+      $("messages").scrollTop = $("messages").scrollHeight;
+    } else if (e.type === "assistant_end") {
+      finalizeStream(e.text);
+    } else if (e.type === "assistant") {
+      // non-streaming (native mode / fallback)
       hideThinking();
       const c = activeChat();
       c.messages.push({ role: "assistant", content: e.text }); save();
       addMsgDom("assistant", e.text);
     } else if (e.type === "tool") {
       addToolChip(e.name, e.args);
+      sBubble = null;  // close current bubble so following text lands below the chip
     } else if (e.type === "error") {
       hideThinking();
+      finalizeStream();
       addMsgDom("error", t("err.prefix") + e.message);
     } else if (e.type === "stopped") {
       toast(t("toast.stopped"));
     }
   };
   ws.onclose = () => setTimeout(connectWs, 1500);
+}
+function finalizeStream(finalText) {
+  const text = (finalText != null ? finalText : sFull).trim();
+  if (text) {
+    activeChat().messages.push({ role: "assistant", content: text });
+    save();
+  }
+  sBubble = null; sFull = "";
 }
 function sendMessage() {
   const text = $("input").value.trim();

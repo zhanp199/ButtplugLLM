@@ -88,22 +88,77 @@ def _parse_kv(rest: str) -> dict[str, str]:
     return out
 
 
-def _parse_commands(text: str) -> list[tuple[str, str]]:
-    """Return [(verb, rest)] for each [[...]] block, in order."""
-    cmds: list[tuple[str, str]] = []
-    for m in re.finditer(r"\[\[(.+?)\]\]", text, flags=re.S):
-        body = m.group(1).strip()
-        parts = body.split(None, 1)
-        if not parts:
-            continue
-        cmds.append((parts[0].lower(), parts[1] if len(parts) > 1 else ""))
-    return cmds
+def _split_tag(inner: str) -> tuple[str, str]:
+    parts = inner.strip().split(None, 1)
+    if not parts:
+        return ("", "")
+    return (parts[0].lower(), parts[1] if len(parts) > 1 else "")
 
 
-async def _device_context(mcp_client: Any) -> tuple[str, int, int]:
-    """Build the 'what's available' note for the prompt, plus default target."""
+# Single-bracket mode/stage annotations the model sometimes writes instead of a
+# real command, e.g. "[切换模式:余韵 Afterglow]" / "[mode: Afterglow]".
+_MODE_KW = (r"切换模式到|切换模式|切换到|切换|进入|模式|阶段|状态|"
+            r"mode|stage|phase|switch|播放|序列|pattern")
+
+
+def _tpl_match(name: str, tpl_names: list[str]) -> str | None:
+    """Resolve a free-text name to a real template (case-insensitive, either
+    direction) so 'Afterglow' or '余韵' map to '余韵 Afterglow'. None if no match."""
+    n = (name or "").strip().lower()
+    if not n:
+        return None
+    for tn in tpl_names:
+        t = tn.lower()
+        if n == t or n in t or t in n:
+            return tn
+    return None
+
+
+def _classify(inner: str, double: bool, tpl_names: list[str]) -> tuple:
+    """Classify a bracketed group into ('cmd', verb, rest) | ('text', literal) |
+    ('drop',). Double brackets are commands; single brackets are commands only
+    when they clearly are (a verb, a mode annotation naming a real pattern, or a
+    bare pattern name) — otherwise they're ordinary prose and stay visible."""
+    s = inner.strip()
+    if not s:
+        return ("drop",) if double else ("text", "[]")
+    verb0 = s.split(None, 1)[0].lower()
+    if verb0 in ("vibrate", "pattern", "stop"):
+        v, rest = _split_tag(s)
+        return ("cmd", v, rest)
+    if double:
+        tn = _tpl_match(s, tpl_names)          # e.g. [[余韵 Afterglow]]
+        return ("cmd", "pattern", "name=" + tn) if tn else ("drop",)
+    m = re.match(r"^(?:" + _MODE_KW + r")\s*[:：]?\s*(.+?)\s*$", s, flags=re.I)
+    if m:
+        cand = re.sub(r"\s*(?:模式|mode)\s*$", "", m.group(1).strip().strip("「」\"'“”"), flags=re.I)
+        tn = _tpl_match(cand, tpl_names)
+        return ("cmd", "pattern", "name=" + tn) if tn else ("drop",)  # tone mode → strip
+    tn = _tpl_match(s, tpl_names)              # bare [余韵 Afterglow]
+    if tn:
+        return ("cmd", "pattern", "name=" + tn)
+    return ("text", "[" + inner + "]")         # ordinary prose
+
+
+async def _handle_group(
+    inner: str, double: bool, tpl_names: list[str], mcp_client, dev, act, emit
+) -> str | None:
+    """Run a classified bracket group; return visible text to keep, or None."""
+    action = _classify(inner, double, tpl_names)
+    if action[0] == "cmd":
+        await _execute_command(mcp_client, action[1], action[2], dev, act, emit)
+        return None
+    if action[0] == "text":
+        return action[1]
+    return None  # drop
+
+
+async def _device_context(mcp_client: Any) -> tuple[str, int, int, list[str]]:
+    """Build the 'what's available' note for the prompt, the default target, and
+    the list of saved pattern names (used to tell a real pattern from a tone)."""
     dev_idx, act_idx = 0, 0
-    lines = []
+    lines: list[str] = []
+    tpl_names: list[str] = []
     try:
         devs = (await mcp_client.call_tool("list_devices")).data or []
         if devs:
@@ -116,11 +171,12 @@ async def _device_context(mcp_client: Any) -> tuple[str, int, int]:
         pass
     try:
         tpls = (await mcp_client.call_tool("list_pattern_templates")).data or []
-        if tpls:
-            lines.append("Saved patterns: " + ", ".join(t["name"] for t in tpls) + ".")
+        tpl_names = [t["name"] for t in tpls]
+        if tpl_names:
+            lines.append("Saved patterns: " + ", ".join(tpl_names) + ".")
     except Exception:
         pass
-    return ("\n".join(lines), dev_idx, act_idx)
+    return ("\n".join(lines), dev_idx, act_idx, tpl_names)
 
 
 async def _execute_command(
@@ -212,6 +268,128 @@ async def _complete(
     return resp.choices[0].message.content or ""
 
 
+# --- streaming: incremental [[command]] detection -------------------------
+class _StreamingUnsupported(Exception):
+    """Raised before any output is emitted so the caller can fall back."""
+
+
+_stream_supported: bool | None = None  # None = unknown, set by auto-probe
+
+
+def _use_streaming() -> bool:
+    if config.LLM_STREAMING == "off":
+        return False
+    if config.LLM_STREAMING == "on":
+        return True
+    return _stream_supported is not False  # "auto": try unless known-bad
+
+
+def _stream_process(buffer: str, final: bool) -> tuple[list[tuple], str]:
+    """Pull complete events out of the rolling buffer, in order. Returns
+    ([("text", s) | ("group", inner, is_double)], remaining_buffer). Anything
+    from an unclosed "[" is held back so partial brackets never reach the user;
+    classification (command vs prose) happens in _classify."""
+    events: list[tuple] = []
+    while True:
+        i = buffer.find("[")
+        if i == -1:
+            if buffer:
+                events.append(("text", buffer))
+            buffer = ""
+            break
+        if i > 0:
+            events.append(("text", buffer[:i]))
+            buffer = buffer[i:]
+        if len(buffer) < 2 and not final:
+            break  # wait: could become "[["
+        if buffer.startswith("[["):
+            end = buffer.find("]]")
+            if end == -1:
+                if final:
+                    buffer = ""  # drop an unterminated command
+                break
+            events.append(("group", buffer[2:end], True))
+            buffer = buffer[end + 2:]
+        else:
+            end = buffer.find("]")
+            if end == -1:
+                if final:
+                    events.append(("text", buffer))
+                    buffer = ""
+                break
+            events.append(("group", buffer[1:end], False))
+            buffer = buffer[end + 1:]
+    return events, buffer
+
+
+async def _open_stream(openai_client: AsyncOpenAI, model: str, messages):
+    if config.LLM_PROMPT_FORMAT == "gemma":
+        return await openai_client.completions.create(
+            model=model, prompt=_gemma_prompt(messages),
+            stop=["<end_of_turn>", "<start_of_turn>"], max_tokens=1024, stream=True,
+        )
+    return await openai_client.chat.completions.create(
+        model=model, messages=messages, stream=True,
+    )
+
+
+def _chunk_text(chunk: Any, is_gemma: bool) -> str:
+    try:
+        return (chunk.choices[0].text if is_gemma
+                else chunk.choices[0].delta.content) or ""
+    except (AttributeError, IndexError, TypeError):
+        return ""
+
+
+async def _run_prompt_streaming(
+    openai_client, model, mcp_client, messages, dev, act, tpl_names, emit
+) -> str:
+    global _stream_supported
+    is_gemma = config.LLM_PROMPT_FORMAT == "gemma"
+    try:
+        stream = await _open_stream(openai_client, model, messages)
+    except Exception as e:
+        raise _StreamingUnsupported(str(e))
+
+    buffer, parts, emitted = "", [], False
+
+    async def handle(events):
+        nonlocal emitted
+        for ev in events:
+            if ev[0] == "text":
+                if ev[1]:
+                    parts.append(ev[1])
+                    await emit({"type": "delta", "text": ev[1]})
+                    emitted = True
+            else:  # ("group", inner, double)
+                vis = await _handle_group(ev[1], ev[2], tpl_names, mcp_client, dev, act, emit)
+                if vis:
+                    parts.append(vis)
+                    await emit({"type": "delta", "text": vis})
+                    emitted = True
+
+    try:
+        async for chunk in stream:
+            piece = _chunk_text(chunk, is_gemma)
+            if not piece:
+                continue
+            _stream_supported = True
+            buffer += piece
+            events, buffer = _stream_process(buffer, final=False)
+            await handle(events)
+    except Exception as e:
+        if not emitted:
+            raise _StreamingUnsupported(str(e))
+        logger.warning("stream interrupted after partial output: %s", e)
+
+    events, _ = _stream_process(buffer, final=True)
+    await handle(events)
+
+    text = re.sub(r"\n{3,}", "\n\n", "".join(parts)).strip()
+    await emit({"type": "assistant_end", "text": text})
+    return text
+
+
 async def _run_prompt(
     openai_client: AsyncOpenAI,
     model: str,
@@ -221,17 +399,32 @@ async def _run_prompt(
     user_text: str,
     emit: EventSink,
 ) -> str:
-    context, dev, act = await _device_context(mcp_client)
+    context, dev, act, tpl_names = await _device_context(mcp_client)
     protocol = COMMAND_PROTOCOL.format(context=context)
     preamble = (system_prompt or "").strip() + SAFETY_SUFFIX + "\n\n" + protocol
     messages = _fold_into_first_user(preamble, history, user_text)
 
+    if _use_streaming():
+        try:
+            return await _run_prompt_streaming(
+                openai_client, model, mcp_client, messages, dev, act, tpl_names, emit
+            )
+        except _StreamingUnsupported as e:
+            global _stream_supported
+            _stream_supported = False
+            logger.warning("streaming unsupported (%s); using non-streaming", e)
+
     raw = await _complete(openai_client, model, messages)
-
-    for verb, rest in _parse_commands(raw):
-        await _execute_command(mcp_client, verb, rest, dev, act, emit)
-
-    text = _strip_commands(raw)
+    events, _ = _stream_process(raw, final=True)
+    parts: list[str] = []
+    for ev in events:
+        if ev[0] == "text":
+            parts.append(ev[1])
+        else:
+            vis = await _handle_group(ev[1], ev[2], tpl_names, mcp_client, dev, act, emit)
+            if vis:
+                parts.append(vis)
+    text = re.sub(r"\n{3,}", "\n\n", "".join(parts)).strip()
     await emit({"type": "assistant", "text": text})
     return text
 
