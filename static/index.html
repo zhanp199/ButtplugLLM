@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ButtplugLLM</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- LEFT: conversations -->
+    <aside class="col sidebar">
+      <div class="col-head">
+        <span class="brand"><span data-i18n="app.brandA">Buttplug</span><span class="dot">·</span><span data-i18n="app.brandB">LLM</span></span>
+        <span class="spacer"></span>
+        <button class="btn sm primary" id="newChatBtn" data-i18n="nav.newChat">+ 新会话</button>
+      </div>
+      <div class="col-body" id="chatList"></div>
+      <div class="sidebar-foot">
+        <select id="langSel" title="Language / 语言">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- MIDDLE: chat -->
+    <main class="col chat">
+      <div class="col-head chat-head">
+        <div class="meta">
+          <span class="name" id="chatTitle">—</span>
+          <span class="role" id="chatRole"></span>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn sm ghost" id="editPromptBtn" data-i18n="btn.editPersona">✎ 人设</button>
+        <button class="estop" id="estopBtn" data-i18n="btn.estop">■ 急停 STOP</button>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <textarea id="input" rows="1" data-i18n-ph="input.placeholder"></textarea>
+        <button class="btn primary" id="sendBtn" data-i18n="btn.send">发送</button>
+      </div>
+    </main>
+
+    <!-- RIGHT: device & control -->
+    <aside class="col panel">
+      <div class="col-head">
+        <span style="font-weight:600" data-i18n="panel.title">控制面板</span>
+        <span class="spacer"></span>
+        <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">未连接</span></span>
+      </div>
+      <div class="col-body">
+        <div class="section">
+          <h3 data-i18n="section.devices">设备</h3>
+          <div id="devices"></div>
+          <button class="btn sm full" id="scanBtn" data-i18n="btn.scan">🔍 扫描设备</button>
+        </div>
+
+        <div class="section">
+          <h3 data-i18n="section.manual">手动控制</h3>
+          <div class="field">
+            <label data-i18n="label.target">目标</label>
+            <select id="targetSelect"></select>
+          </div>
+          <div class="field">
+            <label><span data-i18n="label.intensity">强度</span> <span class="val" id="intVal">0%</span></label>
+            <input type="range" id="intensity" min="0" max="100" value="0" />
+          </div>
+          <div class="field">
+            <label><span data-i18n="label.frequency">频率</span> <span class="val" id="freqVal">4.0 Hz</span></label>
+            <input type="range" id="frequency" min="5" max="150" value="40" />
+          </div>
+          <button class="btn sm full" id="playFreqBtn" data-i18n="btn.playFreq">▶ 播放频率(3s)</button>
+        </div>
+
+        <div class="section">
+          <h3 data-i18n="section.templates">振动模板</h3>
+          <div id="templates"></div>
+          <p style="font-size:11px;color:var(--muted);margin:4px 2px 0" data-i18n="templates.note">在 templates.json 中编辑模板。</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- New / edit chat modal -->
+  <div class="modal-backdrop" id="chatModal">
+    <div class="modal">
+      <h2 id="modalTitle">新建会话</h2>
+      <div class="field">
+        <label data-i18n="modal.chatTitle">会话标题</label>
+        <input type="text" id="mTitle" data-i18n-ph="modal.titlePlaceholder" />
+      </div>
+      <label style="font-size:12px;color:var(--muted)" data-i18n="modal.choosePersona">选择人设</label>
+      <div class="preset-grid" id="presetGrid"></div>
+      <div class="field">
+        <label data-i18n="modal.prompt">System / Role Prompt（可自定义）</label>
+        <textarea id="mPrompt" data-i18n-ph="modal.promptPlaceholder"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="mCancel" data-i18n="btn.cancel">取消</button>
+        <button class="btn primary" id="mSave" data-i18n="btn.save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/static/i18n.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
